@@ -1,47 +1,43 @@
-﻿using Kingdee.BOS.WebApi.ServicesStub;
+﻿using Keeper_Louis.K3.MRP.Interface.PlugIn.Service;
+using Kingdee.BOS.ServiceFacade.KDServiceFx;
+using Kingdee.BOS.WebApi.Client;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Kingdee.BOS.ServiceFacade.KDServiceFx;
-using System.ComponentModel;
-using Kingdee.BOS.JSON;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
-using Kingdee.BOS.WebApi.Client;
 
-namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Service
+namespace ConsoleApplication1
 {
-    [Description("同步物料清单服务")]
-    public class MBillSyncService : AbstractWebApiBusinessService
+    class Program
     {
-
-        public MBillSyncService(KDServiceContext context) : base(context) { }
-
-        public string SyncMBill()
+        static void Main(string[] args)
         {
             /*
-                 1、拼接json对象
-                 2、执行标准bom清单保存
-            */
+                1、拼接json对象
+                2、执行标准bom清单保存
+           */
             JObject jsonRoot = new JObject();//存储models
             JArray models = new JArray();//多model批量保存时使用，存储mBHeader
             JObject mBHeader = new JObject();//model中单据头,存储普通变量、baseData、entrys
             JObject mBEntry = new JObject();//model中单据体，存储普通变量，baseData
             JObject baseData = new JObject();//model中基础资料
             JArray entrys = new JArray();//单个model中存储多行分录体集合，存储mBentry
+            Console.WriteLine("开始");
+            Console.ReadKey();
 
-            mBHeader.Add("FID",0);//FID
+            mBHeader.Add("FID", 0);//FID
             baseData = new JObject();
             baseData.Add("FNumber", "102");
             mBHeader.Add("FCreateOrgId", baseData);//创建组织
             baseData = new JObject();
-            baseData.Add("FNumber","102");
+            baseData.Add("FNumber", "102");
             mBHeader.Add("FUseOrgId", baseData);//使用组织
             baseData = new JObject();
             baseData.Add("FNumber", "WLQD01_SYS");
-            mBHeader.Add("FBILLTYPE",baseData);//单据类型
+            mBHeader.Add("FBILLTYPE", baseData);//单据类型
             mBHeader.Add("FBOMCATEGORY", "1");//BOM分类
             mBHeader.Add("FBOMUSE", "99");//BOM用途
             baseData = new JObject();
@@ -153,21 +149,21 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Service
             mBEntry.Add("FOWNERTYPEID", "BD_OwnerOrg");//货主类型
             entrys.Add(mBEntry);
 
-            mBHeader.Add("FTreeEntity",entrys);
+            mBHeader.Add("FTreeEntity", entrys);
             models.Add(mBHeader);
 
 
-            jsonRoot.Add("Creator","");
+            jsonRoot.Add("Creator", "");
             jsonRoot.Add("IsDeleteEntry", "True");
-            jsonRoot.Add("SubSystemId","");
+            jsonRoot.Add("SubSystemId", "");
             jsonRoot.Add("IsVerifyBaseDataField", "false");
-            jsonRoot.Add("BatchCount","1");
-            jsonRoot.Add("Model",models);
+            jsonRoot.Add("BatchCount", "1");
+            jsonRoot.Add("Model", models);
 
 
             string sFormId = "ENG_BOM";
             string sContent = JsonConvert.SerializeObject(jsonRoot);
-            object[] saveInfo = new object[] { sFormId,sContent};
+            object[] saveInfo = new object[] { sFormId, sContent };
 
 
             ApiClient client = new ApiClient("http://127.0.0.1/k3cloud/");
@@ -177,8 +173,8 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Service
             {
                 var ret = client.Execute<string>("Kingdee.BOS.WebApi.ServicesStub.DynamicFormService.BatchSave", saveInfo);
             }
-
-            return null;
+            Console.WriteLine("结束");
+            Console.ReadKey();
         }
     }
 }
