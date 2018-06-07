@@ -87,6 +87,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Action\SyncAction.cs" />
     <Compile Include="BaseModel\DBHelper.cs" />
     <Compile Include="BaseModel\ResponseResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
