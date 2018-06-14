@@ -19,7 +19,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Service
 
         public MBillSyncService(KDServiceContext context) : base(context) { }
 
-        public string SyncMBill()
+        public string SyncMBill(string parameter)
         {
             /*
                  1、拼接json对象
