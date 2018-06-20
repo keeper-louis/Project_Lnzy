@@ -124,6 +124,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
             //}
             #endregion
             List<string> salNosList = new List<string>();//返回允许处理订单集合
+            salNosList = salNoCol;
             foreach (string item in salNoCol)
             {
                 //0 获取BOM_MAIN表信息(where FSALBILLNO = ? and FDELFLAG = 0 AND FFLAG = 0)
@@ -183,7 +184,26 @@ WHERE M.FSALBILLNO = '{0}'
                         bool bLogin = client.Login(dbId, DBHelper.UserName, DBHelper.PassWord, Convert.ToInt32(DBHelper.ICID));
                         if (bLogin)
                         {
-                            var ret = client.Execute<string>("Keeper_Louis.K3.MRP.Interface.PlugIn.Service.MBillSyncService.SyncMBill,Keeper_Louis.K3.MRP.Interface.PlugIn", new object[] { sContent });
+                            string ret = client.Execute<string>("Keeper_Louis.K3.MRP.Interface.PlugIn.Service.MBillSyncService.SyncMBill,Keeper_Louis.K3.MRP.Interface.PlugIn", new object[] { sContent });
+                            if (ret.Equals("syncSuccess"))
+                            {
+                                //改bom同步成功，无需更改,
+                            }
+                            else
+                            {
+                                string faildListSql = string.Format(@"/*dialect*/UPDATE BOM_LIST SET FFLAG = 2 WHERE FID = {0}", fid);
+                                string faildMainSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN SET FFLAG = 2,FERRORMESSAGE = '{0}' WHERE FID = {1}", ret,fid);
+                                DBUtils.Execute(ctx,faildListSql);
+                                DBUtils.Execute(ctx, faildMainSql);
+                                salNosList.Remove(item);
+                                //for (int k = salNosList.Count - 1; k >= 0; k--)
+                                //{
+                                //    if (salNosList[k] == item)
+                                //        salNosList.Remove(salNosList[i]);
+                                //}
+                                break;
+                                //该bom同步失败，更改主表，子表FFLAG = 2,并更新主表错误信息，根据主表FID进行更新
+                            }
                         }
                     }
                 }
@@ -216,7 +236,7 @@ WHERE M.FSALBILLNO = '{0}'
             mBHeader.Add("FSALBILLNO", fsalbillno);//销售单号
             baseData = new JObject();
             baseData.Add("FNumber", forgno);
-            mBHeader.Add("FCreateOrgId", baseData);//创建组织//组织编号
+            mBHeader.Add("FCreateOrgId", baseData);//创建组织
             baseData = new JObject();
             baseData.Add("FNumber", ffathermatno);
             mBHeader.Add("FMATERIALID", baseData);//父物料编号
