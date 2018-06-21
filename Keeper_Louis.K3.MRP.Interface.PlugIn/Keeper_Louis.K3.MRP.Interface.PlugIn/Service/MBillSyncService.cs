@@ -219,7 +219,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Service
                     if (saveStatus["IsSuccess"].ToString().Equals("True"))
                     {
                         //将保存成功信息写入日志ret
-                        Logger.Error("saveSuccess:",ret,null);
+                        Logger.Info("saveSuccess:", ret);
 
                         JArray successEntity = JArray.Parse(saveStatus["SuccessEntitys"].ToString());
                         JObject jo = new JObject();
@@ -233,7 +233,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Service
                         if (submitStatus["IsSuccess"].ToString().Equals("True"))
                         {
                             //将提交成功信息写入日志submitResult
-                            Logger.Error("submitSuccess:", submitResult, null);
+                            Logger.Info("submitSuccess:", submitResult);
 
                             JArray succEntity = JArray.Parse(saveStatus["SuccessEntitys"].ToString());
                             JObject joi = new JObject();
@@ -247,7 +247,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Service
                             if (audittStatus["IsSuccess"].ToString().Equals("True"))
                             {
                                 //将审核成功信息写入日志auditResult
-                                Logger.Error("auditSuccess:", auditResult, null);
+                                Logger.Info("auditSuccess:", auditResult);
                                 return "syncSuccess";
                             }
                             else

@@ -124,7 +124,10 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
             //}
             #endregion
             List<string> salNosList = new List<string>();//返回允许处理订单集合
-            salNosList = salNoCol;
+            foreach (string list in salNoCol)
+            {
+                salNosList.Add(list);
+            }
             foreach (string item in salNoCol)
             {
                 //0 获取BOM_MAIN表信息(where FSALBILLNO = ? and FDELFLAG = 0 AND FFLAG = 0)
