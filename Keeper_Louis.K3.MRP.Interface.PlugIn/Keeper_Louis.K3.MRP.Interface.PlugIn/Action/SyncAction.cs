@@ -14,6 +14,11 @@ using Newtonsoft.Json.Linq;
 using Keeper_Louis.K3.MRP.Interface.PlugIn.BaseModel;
 using Newtonsoft.Json;
 using Kingdee.BOS.WebApi.Client;
+using Kingdee.BOS.Core.Metadata;
+using Kingdee.BOS.ServiceHelper;
+using Kingdee.BOS.Orm;
+using Kingdee.BOS.Core.DynamicForm;
+using Kingdee.BOS.Core.Validation;
 
 namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
 {
@@ -41,10 +46,9 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
             }
             else
             {
-                //删除订单数据
+                string saleBIllNos = "";
+                IsDelBill(ctx, saleBIllNos);
             }
-
-            //throw new NotImplementedException();
         }
 
         //获取本次处理订单数据集合
@@ -63,8 +67,404 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
         /// <param name="ctx"></param>
         private void SyncSalBill(Context ctx, List<string> salNoCol)
         {
-            //throw new NotImplementedException();
+            //解析需要同步的销售订单单号
+            string saleBIllNos = "'" + string.Join("','", salNoCol.ToArray()) + "'";
+            IsDelBill(ctx, saleBIllNos);
         }
+
+        /// <summary>
+        /// 删除需要删除的销售订单
+        /// </summary>
+        /// <param name="fid"></param>
+        /// <param name="p"></param>
+        /// <param name="ctx"></param>
+        public void IsDelBill(Context ctx, string saleBIllNos)
+        {
+            //获取中间表需要删除的物料数据、bom数据、销售订单数据
+            string strSql = string.Format(@"/*dialect*/SELECT FSALBILLNO FROM  SALE_MAIN  WHERE (FFLAG = 1 OR FFLAG =2 ) AND FDELFLAG = 1");
+            DynamicObjectCollection queryResult = DBUtils.ExecuteDynamicObject(ctx, strSql) as DynamicObjectCollection;
+            if (queryResult != null && queryResult.Count() > 0)//存在需要删除的数据
+            {
+                string saleBillNo = "";
+                foreach (DynamicObject item in queryResult)
+                {
+                    saleBillNo += ",'" + item["FSALBILLNO"].ToString() + "'";
+                }
+                saleBillNo = saleBillNo.Substring(1);
+                //删除销售订单
+                string delSql = string.Format(@"/*dialect*/SELECT FID FROM T_SAL_ORDER WHERE FBILLNO IN ({0}) ", saleBillNo);
+                DynamicObjectCollection result = DBUtils.ExecuteDynamicObject(ctx, delSql) as DynamicObjectCollection;
+                string[] pkids = new string[] { };
+                if (result != null && result.Count() > 0)
+                {
+                    string UnAuditids = "";
+                    foreach (DynamicObject item in result)
+                    {
+                        UnAuditids += item["FID"].ToString() + ",";
+                    }
+                    UnAuditids = UnAuditids.Substring(0, UnAuditids.LastIndexOf(','));
+                    pkids = UnAuditids.Split(',');
+                    UnAuditBill(ctx, "SAL_SaleOrder", pkids);
+                }
+                //删除物料清单(BOM)
+                string delSql1 = string.Format(@"/*dialect*/SELECT FID FROM T_ENG_BOM WHERE FNUMBER IN ({0}) ", saleBillNo);
+                DynamicObjectCollection bomResult = DBUtils.ExecuteDynamicObject(ctx, delSql1) as DynamicObjectCollection;
+                if (bomResult != null && bomResult.Count() > 0)
+                {
+                    string UnAuditids = "";
+                    foreach (DynamicObject item in bomResult)
+                    {
+                        UnAuditids += item["FID"].ToString() + ",";
+                    }
+                    UnAuditids = UnAuditids.Substring(0, UnAuditids.LastIndexOf(','));
+                    pkids = UnAuditids.Split(',');
+                    UnAuditBill(ctx, "ENG_BOM", pkids);
+                }
+                //删除物料
+                string delSql2 = string.Format(@"/*dialect*/SELECT FMATERIALID FROM T_BD_MATERIAL WHERE FNUMBER IN ({0}) ", saleBillNo);
+                DynamicObjectCollection prdResult = DBUtils.ExecuteDynamicObject(ctx, delSql2) as DynamicObjectCollection;
+                if (prdResult != null && prdResult.Count() > 0)
+                {
+                    string UnAuditids = "";
+                    foreach (DynamicObject item in prdResult)
+                    {
+                        UnAuditids += item["FMATERIALID"].ToString() + ",";
+                    }
+                    UnAuditids = UnAuditids.Substring(0, UnAuditids.LastIndexOf(','));
+                    pkids = UnAuditids.Split(',');
+                    UnAuditBill(ctx, "BD_MATERIAL", pkids);
+                }
+            }
+            //判断是否存在同步销售订单单号
+            if (saleBIllNos != null && !"".Equals(saleBIllNos))
+            {
+                SyncSaleBill(ctx, saleBIllNos); //同步销售订单
+            }
+        }
+
+        /// <summary>
+        /// 反审核并删除需要删除的销售订单
+        /// </summary>
+        /// <param name="pkids"></param>
+        /// <param name="p"></param>
+        /// <param name="ctx"></param>
+        private void UnAuditBill(Context ctx, string p, string[] pkids)
+        {
+            //反审核服务
+            FormMetadata meta = MetaDataServiceHelper.Load(ctx, p, true) as FormMetadata;
+            OperateOption UnAuditOption = OperateOption.Create();
+            var UnAuditResult = BusinessDataServiceHelper.UnAudit(ctx, meta.BusinessInfo, pkids, UnAuditOption);
+            if (UnAuditResult.IsSuccess)
+            {
+                //删除服务
+                OperateOption deleteOption = OperateOption.Create();
+                var delectResult = BusinessDataServiceHelper.Delete(ctx, meta.BusinessInfo, pkids, deleteOption);
+                //删除成功将成功信息及状态返回写中间表
+                if (delectResult.IsSuccess)
+                {
+                    OperateResultCollection successResult = delectResult.OperateResult;
+                    List<string> succSql = new List<string>();
+                    foreach (OperateResult item in successResult)
+                    {
+                        if ("SAL_SaleOrder".Equals(p))
+                        {
+                            string strSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN
+                                                                              SET FFLAG = '3', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
+                                                                              WHERE FSALBILLNO = '{2}'
+                                                                             ", System.DateTime.Now.ToString(), item.Number.ToString() + "销售订单删除成功",
+                                                                              item.Number);
+                            succSql.Add(strSql);
+                        }
+                        if ("ENG_BOM".Equals(p))
+                        {
+                            string strSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN
+                                                                             SET FFLAG = '3', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
+                                                                             WHERE FSALBILLNO = '{2}'
+                                                                           ", System.DateTime.Now.ToString(), item.Number.ToString() + "物料清单删除成功",
+                                                                              item.Number);
+                            succSql.Add(strSql);
+                        }
+                        if ("BD_MATERIAL".Equals(p))
+                        {
+                            string strSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN
+                                                                              SET FFLAG = '3', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
+                                                                              WHERE FSALBILLNO = '{2}'
+                                                                            ", System.DateTime.Now.ToString(), item.Number.ToString() + "物料删除成功",
+                                                                              item.Number);
+                            succSql.Add(strSql);
+                        }
+                    }
+                    Kingdee.BOS.Log.Logger.Info(DateTime.Now.ToString() + "deleteSucc", succSql.ToString(), true);
+                    DBUtils.ExecuteBatch(ctx, succSql, 100);
+                }
+                else
+                {
+                    //多条记录被删除，一部分删除成功，一部分删除失败，将成功和失败的信息及状态都返写回中间表
+                    List<ValidationErrorInfo> errorDeleteList = new List<ValidationErrorInfo>();
+                    errorDeleteList = delectResult.ValidationErrors;//删除失败记录返写中间表
+                    if (errorDeleteList != null && errorDeleteList.Count() > 0)
+                    {
+                        List<string> errorSql = new List<string>();
+                        for (int k = 0; k < errorDeleteList.Count(); k++)
+                        {
+                            if ("SAL_SaleOrder".Equals(p))
+                            {
+                                string strSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN
+                                                                              SET FFLAG = '2', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
+                                                                              WHERE FSALBILLNO = (SELECT FBILLNO FROM T_SAL_ORDER WHERE FID = '{2}')
+                                                                             ", System.DateTime.Now.ToString(), errorDeleteList[k].Message, errorDeleteList[k].BillPKID);
+                                errorSql.Add(strSql);
+                            }
+                            if ("ENG_BOM".Equals(p))
+                            {
+                                string strSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN
+                                                                             SET FFLAG = '2', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
+                                                                             WHERE FSALBILLNO = (SELECT FNUMBER FROM T_ENG_BOM WHERE FID = '{2}')
+                                                                           ", System.DateTime.Now.ToString(), errorDeleteList[k].Message, errorDeleteList[k].BillPKID);
+                                errorSql.Add(strSql);
+                            }
+                            if ("BD_MATERIAL".Equals(p))
+                            {
+                                string strSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN
+                                                                              SET FFLAG = '2', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
+                                                                              WHERE FSALBILLNO = (SELECT FNUMBER FROM T_BD_MATERIAL WHERE FID = '{2}')
+                                                                            ", System.DateTime.Now.ToString(), errorDeleteList[k].Message, errorDeleteList[k].BillPKID);
+                                errorSql.Add(strSql);
+                            }
+                        }
+                        Kingdee.BOS.Log.Logger.Error(DateTime.Now.ToString() + "deleteError", errorSql.ToString(), new Exception());
+                        DBUtils.ExecuteBatch(ctx, errorSql, 100);
+                    }
+                    //删除成功记录返回写中间表
+                    OperateResultCollection successResult = delectResult.OperateResult;
+                    if (successResult != null && successResult.Count() > 0)
+                    {
+                        List<string> succSql = new List<string>();
+                        foreach (OperateResult item in successResult)
+                        {
+                            if ("SAL_SaleOrder".Equals(p))
+                            {
+                                string strSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN
+                                                                              SET FFLAG = '3', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
+                                                                              WHERE FSALBILLNO = '{2}'
+                                                                             ", System.DateTime.Now.ToString(), item.Number.ToString() + "销售订单删除成功",
+                                                                              item.Number);
+                                succSql.Add(strSql);
+                            }
+                            if ("ENG_BOM".Equals(p))
+                            {
+                                string strSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN
+                                                                             SET FFLAG = '3', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
+                                                                             WHERE FSALBILLNO = '{2}'
+                                                                           ", System.DateTime.Now.ToString(), item.Number.ToString() + "物料清单删除成功",
+                                                                            item.Number);
+                                succSql.Add(strSql);
+                            }
+                            if ("BD_MATERIAL".Equals(p))
+                            {
+                                string strSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN
+                                                                              SET FFLAG = '3', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
+                                                                              WHERE FSALBILLNO = '{2}'
+                                                                            ", System.DateTime.Now.ToString(), item.Number.ToString() + "物料删除成功",
+                                                                             item.Number);
+                                succSql.Add(strSql);
+                            }
+                            Kingdee.BOS.Log.Logger.Info(DateTime.Now.ToString() + "deleteSucc", succSql.ToString(), true);
+                            DBUtils.ExecuteBatch(ctx, succSql, 100);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                //审核失败记录的信息及状态反写回中间表
+                List<ValidationErrorInfo> errorUnAuditList = new List<ValidationErrorInfo>();
+                errorUnAuditList = UnAuditResult.ValidationErrors;
+                List<string> errorSql = new List<string>();
+                for (int k = 0; k < errorUnAuditList.Count(); k++)
+                {
+                    if ("SAL_SaleOrder".Equals(p))
+                    {
+                        string strSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN
+                                                                          SET FFLAG = '2', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
+                                                                          WHERE FSALBILLNO = (SELECT FBILLNO FROM T_SAL_ORDER WHERE FID = '{2}')
+                                                                        ", System.DateTime.Now.ToString(), errorUnAuditList[k].Message, errorUnAuditList[k].BillPKID);
+                        errorSql.Add(strSql);
+                    }
+                    if ("ENG_BOM".Equals(p))
+                    {
+                        string strSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN
+                                                                          SET FFLAG = '2', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
+                                                                          WHERE FSALBILLNO = (SELECT FNUMBER FROM T_ENG_BOM WHERE FID = '{2}')
+                                                                        ", System.DateTime.Now.ToString(), errorUnAuditList[k].Message, errorUnAuditList[k].BillPKID);
+                        errorSql.Add(strSql);
+                    }
+                    if ("BD_MATERIAL".Equals(p))
+                    {
+                        string strSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN
+                                                                          SET FFLAG = '2', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
+                                                                          WHERE FSALBILLNO = (SELECT FNUMBER FROM T_BD_MATERIAL WHERE FID = '{2}')
+                                                                          ", System.DateTime.Now.ToString(), errorUnAuditList[k].Message, errorUnAuditList[k].BillPKID);
+                        errorSql.Add(strSql);
+                    }
+                }
+                Kingdee.BOS.Log.Logger.Error(DateTime.Now.ToString() + "UnAuditError", errorSql.ToString(), new Exception());
+                DBUtils.ExecuteBatch(ctx, errorSql, 100);
+            }
+        }
+
+        /// <summary>
+        /// 同步销售订单
+        /// </summary>
+        /// <param name="saleBIllNos"></param>
+        /// <param name="ctx"></param>
+        public string SyncSaleBill(Context ctx, string saleBIllNos)
+        {
+            //获取同步销售订单的数据
+            string strSql = string.Format(@"/*dialect*/SELECT FID, FSALBILLNO, FDATE, FORGNO, FCUSTNO, FPROJECTNO, FREMARK
+                                                         FROM SALE_MAIN
+                                                         WHERE FSALBILLNO in ({0})", saleBIllNos);
+            DynamicObjectCollection queryResult = DBUtils.ExecuteDynamicObject(ctx, strSql) as DynamicObjectCollection;
+            if (queryResult != null && queryResult.Count() > 0)
+            {
+                foreach (DynamicObject qResult in queryResult)
+                {
+                    saveSaleBill(ctx, qResult);
+                }
+            }
+            return null;
+        }
+
+        public string saveSaleBill(Context ctx, DynamicObject data)
+        {
+            /*
+               1、拼接json对象
+               2、执行标准销售订单保存
+          */
+            JObject jsonRoot = new JObject();//存储models
+            JArray models = new JArray();//多model批量保存时使用，存储mBHeader
+            JObject mBHeader = new JObject();//model中单据头,存储普通变量、baseData、entrys
+            JObject mBEntry = new JObject();//model中单据体，存储普通变量，baseData
+            JObject sBEntry = new JObject();//model中财务子单据体，存储普通变量，baseData
+            JObject baseData = new JObject();//model中基础资料
+            JArray entrys = new JArray();//单个model中存储多行分录体集合，存储mBentry
+
+            mBHeader.Add("FID", 0);//FID
+            mBHeader.Add("FBillNo", data["FSALBILLNO"].ToString());//单据编号
+            baseData = new JObject();
+            baseData.Add("FNumber", "XSDD01_SYS");
+            mBHeader.Add("FBillTypeID", baseData);//单据类型
+            mBHeader.Add("FBusinessType", "NORMAL");//业务类型
+            mBHeader.Add("FDate", data["FDATE"].ToString());//业务日期
+            baseData = new JObject();
+            baseData.Add("FNumber", data["FORGNO"].ToString());
+            mBHeader.Add("FSaleOrgId", baseData);//销售组织
+            baseData = new JObject();
+            baseData.Add("FNumber", data["FCUSTNO"].ToString());
+            mBHeader.Add("FCustId", baseData);//客户编码
+
+            sBEntry = new JObject();
+            baseData = new JObject();
+            baseData.Add("FNumber", "HLTX01_SYS");
+            sBEntry.Add("FExchangeTypeId", baseData);//汇率类型
+            sBEntry.Add("FExchangeRate", "1.0");//汇率
+            baseData = new JObject();
+            baseData.Add("FNumber", "PRE001");
+            sBEntry.Add("FLocalCurrId", baseData);//本位币
+            mBHeader.Add("FSaleOrderFinance", sBEntry);//财务信息
+            baseData = new JObject();
+            baseData.Add("FNumber", "HLTX01_SYS");
+            mBHeader.Add("FExchangeTypeId", baseData);//汇率类型
+            //baseData = new JObject();
+            //baseData.Add("FNumber", "BM000002");
+            //mBHeader.Add("FSaleDeptId", baseData);//销售部门
+            baseData = new JObject();
+            baseData.Add("FNumber", "PRE001");
+            mBHeader.Add("FSettleCurrId", baseData);//结算币别
+            mBHeader.Add("F_PAEZ_Text", data["FPROJECTNO"].ToString());//工程名称  
+            mBHeader.Add("FNote", data["FREMARK"].ToString());//备注（单据编号+工程名称）  
+
+            string saleFid = data["FID"].ToString();
+            if (!"".Equals(saleFid) && saleFid != null)
+            {
+                string querySql = string.Format(@"/*dialect*/SELECT  FMATERIALNO,FQTY ,FUNIT ,FDELIVERYDATE FROM SALE_LIST WHERE FID = '{0}'", saleFid);
+                DynamicObjectCollection queryResult = DBUtils.ExecuteDynamicObject(ctx, querySql) as DynamicObjectCollection;
+                if (queryResult != null && queryResult.Count() > 0)
+                {
+                    foreach (DynamicObject qResult in queryResult)
+                    {
+                        mBEntry = new JObject();
+                        baseData = new JObject();
+                        baseData.Add("FNumber", qResult["FMATERIALNO"].ToString());
+                        mBEntry.Add("FMaterialId", baseData);//物料编码
+                        mBEntry.Add("FQty", Convert.ToInt32(qResult["FQTY"]));//销售数量
+                        baseData = new JObject();
+                        baseData.Add("FNumber", qResult["FUNIT"].ToString());
+                        mBEntry.Add("FUnitID", baseData);//销售单位
+                        mBEntry.Add("FOUTLMTUNIT", "SAL");//超发控制单位
+                        mBEntry.Add("FReserveType", "1");//预留类型
+                        mBEntry.Add("FDeliveryDate", data["FDATE"].ToString());//要货日期
+                        baseData = new JObject();
+                        baseData.Add("FNumber", data["FORGNO"].ToString());
+                        mBEntry.Add("FSettleOrgIds", baseData);//结算组织
+                        entrys.Add(mBEntry);
+                    }
+                    mBHeader.Add("FSaleOrderEntry", entrys);
+                    models.Add(mBHeader);
+                }
+            }
+
+            jsonRoot.Add("Creator", "");
+            jsonRoot.Add("IsDeleteEntry", "True");
+            jsonRoot.Add("SubSystemId", "");
+            jsonRoot.Add("IsVerifyBaseDataField", "false");
+            jsonRoot.Add("BatchCount", "1");
+            jsonRoot.Add("Model", models);
+
+            string sFormId = "SAL_SaleOrder";
+            string sContent = JsonConvert.SerializeObject(jsonRoot);
+            object[] saveInfo = new object[] { sFormId, sContent };
+
+            ApiClient client = new ApiClient(DBHelper.ServerUrl);
+            string dbId = DBHelper.DBID;
+            bool bLogin = client.Login(dbId, DBHelper.UserName, DBHelper.PassWord, Convert.ToInt32(DBHelper.ICID));
+            string result = "";
+            if (bLogin)
+            {
+                result = client.Execute<string>("Kingdee.BOS.WebApi.ServicesStub.DynamicFormService.BatchSave", saveInfo);
+                JObject jObject = (JObject)JsonConvert.DeserializeObject(result);
+                string flag = jObject["Result"]["ResponseStatus"]["IsSuccess"].ToString();
+                if ("True".Equals(flag))//销售订单同步成功状态及更新时间更新到中间表
+                {
+                    string updateSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN 
+                                                                         SET FFLAG = '1' , FUPDATEDATE  =  '{0}' 
+                                                                         WHERE  FID = '{1}'", System.DateTime.Now.ToString(), saleFid);
+                    DBUtils.Execute(ctx, updateSql);
+                    string updateSql2 = string.Format(@"/*dialect*/UPDATE SALE_MAIN
+                                                                          SET FFLAG = '1' , FUPDATEDATE  =  '{0}' 
+                                                                          WHERE  FID = '{1}'", System.DateTime.Now.ToString(), saleFid);
+
+                    Kingdee.BOS.Log.Logger.Info(DateTime.Now.ToString() + "succWebApi", saleFid.ToString(), true);
+                    DBUtils.Execute(ctx, updateSql2);
+                }
+                else //销售订单同步失败将状态机失败原因更新到中间表
+                {
+                    string essorMes = jObject["Result"]["ResponseStatus"]["Errors"][0].ToString();
+                    string updateSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN 
+                                                                          SET FFLAG = '2' , FUPDATEDATE  =  '{0}', FERRORMESSAGE  = '{1}' 
+                                                                          WHERE  FID = '{2}'", System.DateTime.Now.ToString(), essorMes, saleFid);
+
+                    Kingdee.BOS.Log.Logger.Error(DateTime.Now.ToString() + "errorWebApi", saleFid.ToString() + "同步失败原因：" + essorMes, new Exception());
+                    DBUtils.Execute(ctx, updateSql);
+                }
+            }
+            else
+            {
+                return ResponseResult.Faild("登陆失败！").ToString();
+            }
+            return result;
+        }
+
         /// <summary>
         /// 同步物料清单
         /// 造易已传递的bom清单，若果做修改，会生成新的编码重新传递，所以只判断新增物料清单即可
