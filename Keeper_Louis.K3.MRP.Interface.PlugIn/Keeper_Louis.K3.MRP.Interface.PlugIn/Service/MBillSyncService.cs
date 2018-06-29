@@ -82,8 +82,9 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Service
                     mBEntry.Add("FEXPIREDATE", Convert.ToString(item["FEXPIREDATE"].ToString()));//失效日期
                     mBEntry.Add("FISSUETYPE", "1");//发料方式
                     mBEntry.Add("FTIMEUNIT", "1");//时间单位
-                    mBEntry.Add("FOWNERTYPEID", "BD_OwnerOrg");//货主类型
+                    mBEntry.Add("FOWNERTYPEID", "BD_OwnerOrg");//货主类型111
                     entrys.Add(mBEntry);
+
                 }
                 mBHeader.Add("FTreeEntity", entrys);
                 #region 弃用
