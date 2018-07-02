@@ -381,7 +381,9 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
             baseData = new JObject();
             baseData.Add("FNumber", "PRE001");
             mBHeader.Add("FSettleCurrId", baseData);//结算币别
-            mBHeader.Add("F_PAEZ_Text", data["FPROJECTNO"].ToString());//工程名称  
+            baseData = new JObject();
+            baseData.Add("FNumber", data["FPROJECTNO"].ToString());
+            mBHeader.Add("FPROJECTNO", baseData);//工程名称  
             mBHeader.Add("FNote", data["FREMARK"].ToString());//备注（单据编号+工程名称）  
 
             string saleFid = data["FID"].ToString();
@@ -690,6 +692,10 @@ WHERE M.FSALBILLNO = '{0}'
         private List<string> SyncMaterial(Context ctx, DynamicObjectCollection salNoCol)
         {
             List<string> salNoColOut = new List<string>();
+            for (int k=0;k< salNoCol.Count();k++)
+            {
+                salNoColOut.Add(salNoCol[k]["FSALBILLNO"].ToString());
+            }
             for (int i=0;i< salNoCol.Count();i++)
             {
                 string FSALBILLNO = salNoCol[i]["FSALBILLNO"].ToString();
@@ -699,55 +705,59 @@ from PRD_MAIN pm,PRD_LIST pl where pm.FID=pl.fid and pm.FFLAG=0 and pl.FFLAG=0 a
                 DynamicObjectCollection queryResult = DBUtils.ExecuteDynamicObject(ctx, strSql) as DynamicObjectCollection;
                 if (queryResult != null && queryResult.Count() > 0)
                 {
-                    DynamicObject data = queryResult[0];
                     //2 更新子表数据状态，更新主表数据状态
                     string updateBomListSql = string.Format(@"/*dialect*/UPDATE PRD_LIST SET FFLAG = 1 WHERE FID = (SELECT FID FROM PRD_MAIN WHERE FSALBILLNO = '{0}' AND FFLAG = 0 AND FDELFLAG = 0)", FSALBILLNO);
                     string updateBomMainSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN SET FFLAG = 1 WHERE FSALBILLNO = '{0}' AND FFLAG = 0 AND FDELFLAG = 0", FSALBILLNO);
                     DBUtils.Execute(ctx, updateBomListSql);
                     DBUtils.Execute(ctx, updateBomMainSql);
 
-                    //3 拼接json对象
-                    JArray models = new JArray();//多model批量保存时使用，存储mBHeader
-                    JObject mBHeader = new JObject();//model中单据头,存储普通变量、baseData、entrys
-                    JObject SubHeadEntity = new JObject();//model中SubHeadEntity
-                    JObject SubHeadEntity5 = new JObject();//model中SubHeadEntity5
-                    JObject baseData = new JObject();//model中基础资料
-
-                    mBHeader.Add("ServerUrl", DBHelper.ServerUrl);//ServerUrl
-                    mBHeader.Add("DBID", DBHelper.DBID);//DBID
-                    mBHeader.Add("UserName", DBHelper.UserName);//USERNAME
-                    mBHeader.Add("PassWord", DBHelper.PassWord);//PASSWORD;
-                    mBHeader.Add("ICID", DBHelper.ICID);//IC
-                    mBHeader.Add("FCreateOrgId", data["FORGNO"].ToString());//申请组织
-                    mBHeader.Add("FNumber", data["FMATERIALLNO"].ToString());//物料编码
-                    mBHeader.Add("FName", data["FMATERIALNAME"].ToString());//物料名称
-                    mBHeader.Add("FDESCRIPTION", data["FDESCRIPTION"].ToString());//规格型号
-                    mBHeader.Add("FBaseUnitId", data["FUNIT"].ToString());//基本单位
-                    mBHeader.Add("FSTDLTIME", data["FSTDLTIME"].ToString());//标准工时
-
-                    string sContent = JsonConvert.SerializeObject(mBHeader);
-                    ApiClient client = new ApiClient(DBHelper.ServerUrl);
-                    string dbId = DBHelper.DBID; //AotuTest117
-                    bool bLogin = client.Login(dbId, DBHelper.UserName, DBHelper.PassWord, Convert.ToInt32(DBHelper.ICID));
-
-                    if (bLogin)
+                    foreach (DynamicObject data in queryResult)
                     {
-                        string ret = client.Execute<string>("Keeper_Louis.K3.MRP.Interface.PlugIn.Service.SyncMaterialBill.SyncMBill,Keeper_Louis.K3.MRP.Interface.PlugIn", new object[] { sContent });
-                        if (ret.Equals("syncSuccess")) 
+                        //3 拼接json对象
+                        JArray models = new JArray();//多model批量保存时使用，存储mBHeader
+                        JObject mBHeader = new JObject();//model中单据头,存储普通变量、baseData、entrys
+                        JObject SubHeadEntity = new JObject();//model中SubHeadEntity
+                        JObject SubHeadEntity5 = new JObject();//model中SubHeadEntity5
+                        JObject baseData = new JObject();//model中基础资料
+
+                        mBHeader.Add("ServerUrl", DBHelper.ServerUrl);//ServerUrl
+                        mBHeader.Add("DBID", DBHelper.DBID);//DBID
+                        mBHeader.Add("UserName", DBHelper.UserName);//USERNAME
+                        mBHeader.Add("PassWord", DBHelper.PassWord);//PASSWORD;
+                        mBHeader.Add("ICID", DBHelper.ICID);//IC
+                        mBHeader.Add("FCreateOrgId", data["FORGNO"].ToString());//申请组织
+                        mBHeader.Add("FNumber", data["FMATERIALLNO"].ToString());//物料编码
+                        mBHeader.Add("FName", data["FMATERIALNAME"].ToString());//物料名称
+                        mBHeader.Add("FDESCRIPTION", data["FDESCRIPTION"].ToString());//规格型号
+                        mBHeader.Add("FBaseUnitId", data["FUNIT"].ToString());//基本单位
+                        mBHeader.Add("FSTDLTIME", data["FSTDLTIME"].ToString());//标准工时
+
+                        string sContent = JsonConvert.SerializeObject(mBHeader);
+                        ApiClient client = new ApiClient(DBHelper.ServerUrl);
+                        string dbId = DBHelper.DBID; //AotuTest117
+                        bool bLogin = client.Login(dbId, DBHelper.UserName, DBHelper.PassWord, Convert.ToInt32(DBHelper.ICID));
+
+                        if (bLogin)
                         {
-                            salNoColOut.Add(FSALBILLNO);
-                            //该物料同步成功，无需更改,
-                        }
-                        else
-                        {
-                            string faildListSql = string.Format(@"/*dialect*/UPDATE PRD_LIST SET FFLAG = 2 WHERE FSALBILLNO = {0}", FSALBILLNO);
-                            string faildMainSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN SET FFLAG = 2,FERRORMESSAGE = '{0}' WHERE FSALBILLNO = {1}", ret, FSALBILLNO);
-                            DBUtils.Execute(ctx, faildListSql);
-                            DBUtils.Execute(ctx, faildMainSql);
-                            break;
-                            //物料同步失败，更改主表，子表FFLAG = 2,并更新主表错误信息，根据主表FID进行更新
+                            string ret = client.Execute<string>("Keeper_Louis.K3.MRP.Interface.PlugIn.Service.SyncMaterialBill.SyncMBill,Keeper_Louis.K3.MRP.Interface.PlugIn", new object[] { sContent });
+                            if (ret.Equals("syncSuccess"))
+                            {
+                                //该物料同步成功，无需更改,
+                            }
+                            else
+                            {
+                                string faildListSql = string.Format(@"/*dialect*/UPDATE PRD_LIST SET FFLAG = 2 WHERE FSALBILLNO = {0}", FSALBILLNO);
+                                string faildMainSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN SET FFLAG = 2,FERRORMESSAGE = '{0}' WHERE FSALBILLNO = {1}", ret, FSALBILLNO);
+                                DBUtils.Execute(ctx, faildListSql);
+                                DBUtils.Execute(ctx, faildMainSql);
+
+                                salNoColOut.Remove(FSALBILLNO);
+                                break;
+                                //物料同步失败，更改主表，子表FFLAG = 2,并更新主表错误信息，根据主表FID进行更新
+                            }
                         }
                     }
+     
                 }
             }
             return salNoColOut;

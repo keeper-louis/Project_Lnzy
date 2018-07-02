@@ -52,10 +52,16 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Service
             baseData = new JObject();
             baseData.Add("FNumber", Jo["FBaseUnitId"].ToString());
             SubHeadEntity.Add("FBaseUnitId", baseData);
+            SubHeadEntity.Add("FIsPurchase", "true");
+            SubHeadEntity.Add("FIsInventory", "true");
+            SubHeadEntity.Add("FIsSubContract", "true");
+            SubHeadEntity.Add("FIsSale", "true");
+            SubHeadEntity.Add("FIsProduce", "true");
+            SubHeadEntity.Add("FIsAsset", "true");
             mBHeader.Add("SubHeadEntity", SubHeadEntity);//基本单位
             SubHeadEntity5.Add("FStdLaborPrePareTime",  Jo["FSTDLTIME"].ToString());
+            SubHeadEntity5.Add("FIsMainPrd", "true");
             mBHeader.Add("SubHeadEntity5", SubHeadEntity5);//标准工时
-
             jsonRoot.Add("Model", mBHeader);
 
             string sFormId = "BD_MATERIAL";
