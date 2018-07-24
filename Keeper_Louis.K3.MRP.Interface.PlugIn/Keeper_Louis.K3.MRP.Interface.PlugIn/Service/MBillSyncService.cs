@@ -61,6 +61,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Service
                 //baseData = new JObject();
                 //baseData.Add("FNumber", "Pcs");
                 mBHeader.Add("FUNITID", (JObject)JsonConvert.DeserializeObject(Jo["FUNITID"].ToString()));//单位
+                mBHeader.Add("FSALBILLNO", FSALBILLNO);//销售订单号
 
                 JArray Ja = (JArray)JsonConvert.DeserializeObject(Jo["FTreeEntity"].ToString());
                 foreach (JObject item in Ja)
@@ -76,6 +77,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Service
                     mBEntry.Add("FDOSAGETYPE", "2");//用量类型
                     mBEntry.Add("FNUMERATOR", Convert.ToDouble(item["FNUMERATOR"].ToString()));//用量：分子
                     mBEntry.Add("FDENOMINATOR", Convert.ToDouble(item["FDENOMINATOR"].ToString()));//用量：分母
+                    mBEntry.Add("FOWNERID", (JObject)JsonConvert.DeserializeObject(Jo["FCreateOrgId"].ToString()));//货主
                     mBEntry.Add("FOverControlMode", "2");//超发控制方式
                     mBEntry.Add("FEntrySource", "1");//子项来源
                     mBEntry.Add("FEFFECTDATE", Convert.ToString(item["FEFFECTDATE"].ToString()));//生效日期

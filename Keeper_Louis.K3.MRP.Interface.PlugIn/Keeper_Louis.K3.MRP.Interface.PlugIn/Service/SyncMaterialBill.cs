@@ -49,19 +49,50 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Service
             mBHeader.Add("FNumber", Jo["FNumber"].ToString());//物料编码
             mBHeader.Add("FName", Jo["FName"].ToString());//物料名称
             mBHeader.Add("FSpecification", Jo["FDESCRIPTION"].ToString());//规格型号
+            mBHeader.Add("FSALBILLNO", Jo["FSALBILLNO"].ToString());//销售订单号
             baseData = new JObject();
             baseData.Add("FNumber", Jo["FBaseUnitId"].ToString());
-            SubHeadEntity.Add("FBaseUnitId", baseData);
+            //baseData.Add("FNumber","Pcs");
+            SubHeadEntity.Add("FBaseUnitId", baseData);//基本单位
+            string FCategoryID = string.Empty;
+            string FErpClsID= string.Empty;
+            if (Jo["FNumber"].ToString().Substring(0,2).Equals("01"))
+            {
+                FCategoryID = "01";
+                FErpClsID = "9";
+            }
+            if (Jo["FNumber"].ToString().Substring(0, 2).Equals("02"))
+            {
+                FCategoryID = "02";
+                FErpClsID = "2";
+            }
+            if (Jo["FNumber"].ToString().Substring(0, 2).Equals("03"))
+            {
+                FCategoryID = "03";
+                FErpClsID = "1";
+            }
+            baseData = new JObject();
+            baseData.Add("FNumber", FCategoryID);//存货类别
+            SubHeadEntity.Add("FCategoryID", baseData);
+            SubHeadEntity.Add("FErpClsID", FErpClsID);//物料属性
             SubHeadEntity.Add("FIsPurchase", "true");
             SubHeadEntity.Add("FIsInventory", "true");
             SubHeadEntity.Add("FIsSubContract", "true");
             SubHeadEntity.Add("FIsSale", "true");
             SubHeadEntity.Add("FIsProduce", "true");
             SubHeadEntity.Add("FIsAsset", "true");
-            mBHeader.Add("SubHeadEntity", SubHeadEntity);//基本单位
-            SubHeadEntity5.Add("FStdLaborPrePareTime",  Jo["FSTDLTIME"].ToString());
+
+            mBHeader.Add("SubHeadEntity", SubHeadEntity);
             SubHeadEntity5.Add("FIsMainPrd", "true");
-            mBHeader.Add("SubHeadEntity5", SubHeadEntity5);//标准工时
+            SubHeadEntity5.Add("FStdLaborPrePareTime",  Jo["FSTDLTIME"].ToString());//标准工时
+
+            baseData = new JObject();
+            baseData.Add("FNumber", Jo["FBaseUnitId"].ToString());
+            //baseData.Add("FNumber", "Pcs");
+            SubHeadEntity5.Add("FMinIssueUnitId", baseData);//最小发料批量单位
+            
+
+            mBHeader.Add("SubHeadEntity5", SubHeadEntity5);
             jsonRoot.Add("Model", mBHeader);
 
             string sFormId = "BD_MATERIAL";

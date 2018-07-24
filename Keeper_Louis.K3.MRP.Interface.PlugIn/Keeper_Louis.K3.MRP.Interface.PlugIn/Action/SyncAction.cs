@@ -168,7 +168,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
                     {
                         if ("SAL_SaleOrder".Equals(p))
                         {
-                            string strSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN
+                            string strSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN@ZyK3Link
                                                                               SET FFLAG = '3', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
                                                                               WHERE FSALBILLNO = '{2}'
                                                                              ", System.DateTime.Now.ToString(), item.Number.ToString() + "销售订单删除成功",
@@ -177,7 +177,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
                         }
                         if ("ENG_BOM".Equals(p))
                         {
-                            string strSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN
+                            string strSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN@ZyK3Link
                                                                              SET FFLAG = '3', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
                                                                              WHERE FSALBILLNO = '{2}'
                                                                            ", System.DateTime.Now.ToString(), item.Number.ToString() + "物料清单删除成功",
@@ -186,7 +186,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
                         }
                         if ("BD_MATERIAL".Equals(p))
                         {
-                            string strSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN
+                            string strSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN@ZyK3Link
                                                                               SET FFLAG = '3', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
                                                                               WHERE FSALBILLNO = '{2}'
                                                                             ", System.DateTime.Now.ToString(), item.Number.ToString() + "物料删除成功",
@@ -209,7 +209,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
                         {
                             if ("SAL_SaleOrder".Equals(p))
                             {
-                                string strSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN
+                                string strSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN@ZyK3Link
                                                                               SET FFLAG = '2', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
                                                                               WHERE FSALBILLNO = (SELECT FBILLNO FROM T_SAL_ORDER WHERE FID = '{2}')
                                                                              ", System.DateTime.Now.ToString(), errorDeleteList[k].Message, errorDeleteList[k].BillPKID);
@@ -217,7 +217,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
                             }
                             if ("ENG_BOM".Equals(p))
                             {
-                                string strSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN
+                                string strSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN@ZyK3Link
                                                                              SET FFLAG = '2', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
                                                                              WHERE FSALBILLNO = (SELECT FNUMBER FROM T_ENG_BOM WHERE FID = '{2}')
                                                                            ", System.DateTime.Now.ToString(), errorDeleteList[k].Message, errorDeleteList[k].BillPKID);
@@ -225,7 +225,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
                             }
                             if ("BD_MATERIAL".Equals(p))
                             {
-                                string strSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN
+                                string strSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN@ZyK3Link
                                                                               SET FFLAG = '2', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
                                                                               WHERE FSALBILLNO = (SELECT FNUMBER FROM T_BD_MATERIAL WHERE FID = '{2}')
                                                                             ", System.DateTime.Now.ToString(), errorDeleteList[k].Message, errorDeleteList[k].BillPKID);
@@ -244,7 +244,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
                         {
                             if ("SAL_SaleOrder".Equals(p))
                             {
-                                string strSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN
+                                string strSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN@ZyK3Link
                                                                               SET FFLAG = '3', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
                                                                               WHERE FSALBILLNO = '{2}'
                                                                              ", System.DateTime.Now.ToString(), item.Number.ToString() + "销售订单删除成功",
@@ -253,7 +253,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
                             }
                             if ("ENG_BOM".Equals(p))
                             {
-                                string strSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN
+                                string strSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN@ZyK3Link
                                                                              SET FFLAG = '3', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
                                                                              WHERE FSALBILLNO = '{2}'
                                                                            ", System.DateTime.Now.ToString(), item.Number.ToString() + "物料清单删除成功",
@@ -262,7 +262,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
                             }
                             if ("BD_MATERIAL".Equals(p))
                             {
-                                string strSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN
+                                string strSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN@ZyK3Link
                                                                               SET FFLAG = '3', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
                                                                               WHERE FSALBILLNO = '{2}'
                                                                             ", System.DateTime.Now.ToString(), item.Number.ToString() + "物料删除成功",
@@ -285,7 +285,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
                 {
                     if ("SAL_SaleOrder".Equals(p))
                     {
-                        string strSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN
+                        string strSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN@ZyK3Link
                                                                           SET FFLAG = '2', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
                                                                           WHERE FSALBILLNO = (SELECT FBILLNO FROM T_SAL_ORDER WHERE FID = '{2}')
                                                                         ", System.DateTime.Now.ToString(), errorUnAuditList[k].Message, errorUnAuditList[k].BillPKID);
@@ -293,7 +293,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
                     }
                     if ("ENG_BOM".Equals(p))
                     {
-                        string strSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN
+                        string strSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN@ZyK3Link
                                                                           SET FFLAG = '2', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
                                                                           WHERE FSALBILLNO = (SELECT FNUMBER FROM T_ENG_BOM WHERE FID = '{2}')
                                                                         ", System.DateTime.Now.ToString(), errorUnAuditList[k].Message, errorUnAuditList[k].BillPKID);
@@ -301,7 +301,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
                     }
                     if ("BD_MATERIAL".Equals(p))
                     {
-                        string strSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN
+                        string strSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN@ZyK3Link
                                                                           SET FFLAG = '2', FUPDATEDATE = '{0}', FERRORMESSAGE = '{1}'
                                                                           WHERE FSALBILLNO = (SELECT FNUMBER FROM T_BD_MATERIAL WHERE FID = '{2}')
                                                                           ", System.DateTime.Now.ToString(), errorUnAuditList[k].Message, errorUnAuditList[k].BillPKID);
@@ -438,11 +438,11 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
                 string flag = jObject["Result"]["ResponseStatus"]["IsSuccess"].ToString();
                 if ("True".Equals(flag))//销售订单同步成功状态及更新时间更新到中间表
                 {
-                    string updateSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN 
+                    string updateSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN@ZyK3Link 
                                                                          SET FFLAG = '1' , FUPDATEDATE  =  '{0}' 
                                                                          WHERE  FID = '{1}'", System.DateTime.Now.ToString(), saleFid);
                     DBUtils.Execute(ctx, updateSql);
-                    string updateSql2 = string.Format(@"/*dialect*/UPDATE SALE_MAIN
+                    string updateSql2 = string.Format(@"/*dialect*/UPDATE SALE_MAIN@ZyK3Link
                                                                           SET FFLAG = '1' , FUPDATEDATE  =  '{0}' 
                                                                           WHERE  FID = '{1}'", System.DateTime.Now.ToString(), saleFid);
 
@@ -452,7 +452,7 @@ namespace Keeper_Louis.K3.MRP.Interface.PlugIn.Action
                 else //销售订单同步失败将状态机失败原因更新到中间表
                 {
                     string essorMes = jObject["Result"]["ResponseStatus"]["Errors"][0].ToString();
-                    string updateSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN 
+                    string updateSql = string.Format(@"/*dialect*/UPDATE SALE_MAIN@ZyK3Link 
                                                                           SET FFLAG = '2' , FUPDATEDATE  =  '{0}', FERRORMESSAGE  = '{1}' 
                                                                           WHERE  FID = '{2}'", System.DateTime.Now.ToString(), essorMes, saleFid);
 
@@ -551,8 +551,8 @@ WHERE M.FSALBILLNO = '{0}'
         AND M.FDELFLAG = 0", item);
                 DynamicObjectCollection bomListCol = DBUtils.ExecuteDynamicObject(ctx, bomListSql);
                 //2 更新子表数据状态，更新主表数据状态
-                string updateBomListSql = string.Format(@"/*dialect*/UPDATE BOM_LIST SET FFLAG = 1 WHERE FID IN (SELECT FID FROM BOM_MAIN WHERE FSALBILLNO = '{0}' AND FFLAG = 0 AND FDELFLAG = 0)",item);
-                string updateBomMainSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN SET FFLAG = 1 WHERE FSALBILLNO = '{0}' AND FFLAG = 0 AND FDELFLAG = 0",item);
+                string updateBomListSql = string.Format(@"/*dialect*/UPDATE BOM_LIST@ZyK3Link SET FFLAG = 1 WHERE FID IN (SELECT FID FROM BOM_MAIN WHERE FSALBILLNO = '{0}' AND FFLAG = 0 AND FDELFLAG = 0)", item);
+                string updateBomMainSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN@ZyK3Link SET FFLAG = 1 WHERE FSALBILLNO = '{0}' AND FFLAG = 0 AND FDELFLAG = 0", item);
                 DBUtils.Execute(ctx,updateBomListSql);
                 DBUtils.Execute(ctx,updateBomMainSql);
                 //3 拼接参数json
@@ -596,8 +596,8 @@ WHERE M.FSALBILLNO = '{0}'
                             }
                             else
                             {
-                                string faildListSql = string.Format(@"/*dialect*/UPDATE BOM_LIST SET FFLAG = 2 WHERE FID = {0}", fid);
-                                string faildMainSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN SET FFLAG = 2,FERRORMESSAGE = '{0}' WHERE FID = {1}", ret,fid);
+                                string faildListSql = string.Format(@"/*dialect*/UPDATE BOM_LIST@ZyK3Link SET FFLAG = 2 WHERE FID = {0}", fid);
+                                string faildMainSql = string.Format(@"/*dialect*/UPDATE BOM_MAIN@ZyK3Link SET FFLAG = 2,FERRORMESSAGE = '{0}' WHERE FID = {1}", ret,fid);
                                 DBUtils.Execute(ctx,faildListSql);
                                 DBUtils.Execute(ctx, faildMainSql);
                                 salNosList.Remove(item);
@@ -706,8 +706,8 @@ from PRD_MAIN pm,PRD_LIST pl where pm.FID=pl.fid and pm.FFLAG=0 and pl.FFLAG=0 a
                 if (queryResult != null && queryResult.Count() > 0)
                 {
                     //2 更新子表数据状态，更新主表数据状态
-                    string updateBomListSql = string.Format(@"/*dialect*/UPDATE PRD_LIST SET FFLAG = 1 WHERE FID = (SELECT FID FROM PRD_MAIN WHERE FSALBILLNO = '{0}' AND FFLAG = 0 AND FDELFLAG = 0)", FSALBILLNO);
-                    string updateBomMainSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN SET FFLAG = 1 WHERE FSALBILLNO = '{0}' AND FFLAG = 0 AND FDELFLAG = 0", FSALBILLNO);
+                    string updateBomListSql = string.Format(@"/*dialect*/UPDATE PRD_LIST@ZyK3Link SET FFLAG = 1 WHERE FID = (SELECT FID FROM PRD_MAIN@ZyK3Link WHERE FSALBILLNO = '{0}' AND FFLAG = 0 AND FDELFLAG = 0)", FSALBILLNO);
+                    string updateBomMainSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN@ZyK3Link SET FFLAG = 1 WHERE FSALBILLNO = '{0}' AND FFLAG = 0 AND FDELFLAG = 0", FSALBILLNO);
                     DBUtils.Execute(ctx, updateBomListSql);
                     DBUtils.Execute(ctx, updateBomMainSql);
 
@@ -725,6 +725,7 @@ from PRD_MAIN pm,PRD_LIST pl where pm.FID=pl.fid and pm.FFLAG=0 and pl.FFLAG=0 a
                         mBHeader.Add("UserName", DBHelper.UserName);//USERNAME
                         mBHeader.Add("PassWord", DBHelper.PassWord);//PASSWORD;
                         mBHeader.Add("ICID", DBHelper.ICID);//IC
+                        mBHeader.Add("FSALBILLNO", data["FSALBILLNO"].ToString());//销售订单号
                         mBHeader.Add("FCreateOrgId", data["FORGNO"].ToString());//申请组织
                         mBHeader.Add("FNumber", data["FMATERIALLNO"].ToString());//物料编码
                         mBHeader.Add("FName", data["FMATERIALNAME"].ToString());//物料名称
@@ -746,8 +747,8 @@ from PRD_MAIN pm,PRD_LIST pl where pm.FID=pl.fid and pm.FFLAG=0 and pl.FFLAG=0 a
                             }
                             else
                             {
-                                string faildListSql = string.Format(@"/*dialect*/UPDATE PRD_LIST SET FFLAG = 2 WHERE FSALBILLNO = {0}", FSALBILLNO);
-                                string faildMainSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN SET FFLAG = 2,FERRORMESSAGE = '{0}' WHERE FSALBILLNO = {1}", ret, FSALBILLNO);
+                                string faildListSql = string.Format(@"/*dialect*/UPDATE PRD_LIST@ZyK3Link SET FFLAG = 2,FERRORMESSAGE = '{0}' WHERE fid in (select fid from PRD_MAIN@ZyK3Link where  FSALBILLNO = {1})", ret, FSALBILLNO);
+                                string faildMainSql = string.Format(@"/*dialect*/UPDATE PRD_MAIN@ZyK3Link SET FFLAG = 2 WHERE FSALBILLNO = {0}",  FSALBILLNO);
                                 DBUtils.Execute(ctx, faildListSql);
                                 DBUtils.Execute(ctx, faildMainSql);
 
